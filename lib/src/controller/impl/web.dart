@@ -124,12 +124,12 @@ class WebViewXController extends ChangeNotifier
   /// print(resultFromJs); // prints "This is a test"
   /// ```
   @override
-  Future<dynamic> callJsMethod(
-    String name,
-    List<dynamic> params,
-  ) {
-    final result = connector.callMethod(name.toJS, params.toJSBox);
-    return Future<dynamic>.value(result);
+  Future<dynamic> callJsMethod(String name, List<dynamic> params) {
+    final result = connector.callMethodVarArgs(
+      name.toJS,
+      params.map<js.JSAny?>((param) => param.jsify()).toList(),
+    );
+    return Future<dynamic>.value(result.dartify());
   }
 
   /// This function allows you to evaluate 'raw' javascript (e.g: 2+2)
@@ -146,9 +146,9 @@ class WebViewXController extends ChangeNotifier
   }) {
     final result = (inGlobalContext ? js.globalContext : connector).callMethod(
       'eval'.toJS,
-      [rawJavascript].toJSBox,
+      rawJavascript.toJS,
     );
-    return Future<dynamic>.value(result);
+    return Future<dynamic>.value(result.dartify());
   }
 
   /// Returns the current content
@@ -246,10 +246,7 @@ class WebViewXController extends ChangeNotifier
   /// Clears cache
   @override
   Future<void> clearCache() {
-    (connector["localStorage"] as js.JSObject?)?.callMethod(
-      "clear".toJS,
-      [].toJSBox,
-    );
+    (connector["localStorage"] as js.JSObject?)?.callMethod("clear".toJS);
     evalRawJavascript(
       'caches.keys().then((keyList) => Promise.all(keyList.map((key) => caches.delete(key))))',
     );
